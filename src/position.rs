@@ -118,8 +118,12 @@ impl Iterator for PositionIter {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let size = usize::from(self.end.yx - self.start.yx + 1);
-        (size, Some(size))
+        if self.start.yx <= self.end.yx {
+            let size = usize::from(self.end.yx - self.start.yx + 1);
+            (size, Some(size))
+        } else {
+            (0, Some(0))
+        }
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
