@@ -1,7 +1,8 @@
 use std::convert::TryFrom;
 
 use crate::cells::{GameBoardCell, GameBoardCellState};
-use crate::InvalidInputError;
+use crate::position::Position;
+use crate::{InvalidInputError, GAME_BOARD_SIZE};
 
 #[derive(Debug, Copy, Clone)]
 pub enum GameBoardShotResult {
@@ -20,69 +21,29 @@ impl GameBoardShotResult {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct Position {
-    x: std::num::NonZeroU8,
-    y: std::num::NonZeroU8,
-}
-
-impl std::str::FromStr for Position {
-    type Err = InvalidInputError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let coords: Vec<&str> = s.split_whitespace().collect();
-
-        let parse = |value: &str| {
-            value.parse().map_err(|_| InvalidInputError {}).and_then(
-                |value: std::num::NonZeroU8| {
-                    if value.get() >= 1 && value.get() <= 10 {
-                        Ok(value)
-                    } else {
-                        Err(InvalidInputError {})
-                    }
-                },
-            )
-        };
-        Ok(Position {
-            x: parse(coords[0])?,
-            y: parse(coords[1])?,
-        })
-    }
-}
-
-const GAME_BOARD_SIZE: usize = 10;
-
 #[derive(Clone)]
 pub struct GameBoard {
-    inner: Vec<Vec<GameBoardCell>>,
+    inner: arrayvec::ArrayVec<[GameBoardCell; (GAME_BOARD_SIZE * GAME_BOARD_SIZE) as usize]>,
     hits_left: u8,
 }
 
 impl GameBoard {
+    fn get_index(pos: Position) -> usize {
+        usize::from(pos.yx())
+    }
+    pub fn get(&self, pos: Position) -> GameBoardCell {
+        self.inner[Self::get_index(pos)]
+    }
+
+    pub fn get_mut(&mut self, pos: Position) -> &mut GameBoardCell {
+        &mut self.inner[Self::get_index(pos)]
+    }
+
     pub fn from_lines<Item, I>(lines: I) -> Result<Self, InvalidInputError>
     where
         Item: AsRef<str>,
         I: Iterator<Item = Item>,
     {
-        let inner = lines
-            .map(|line| {
-                line.as_ref()
-                    .chars()
-                    .map(GameBoardCell::try_from)
-                    .collect::<Result<Vec<GameBoardCell>, _>>()
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
-        if inner.len() != 10
-            || inner
-                .iter()
-                .filter(|line| line.len() != 10)
-                .next()
-                .is_some()
-        {
-            return Err(InvalidInputError {});
-        }
-
         let mut ships_count: [u8; 5] = [0, 4, 3, 2, 1];
         let hits_left = ships_count
             .iter()
@@ -90,77 +51,144 @@ impl GameBoard {
             .map(|(ship_size, count)| ship_size * count)
             .sum();
 
-        for (y, line) in inner.iter().enumerate() {
-            for (x, cell) in line.iter().enumerate() {
-                if y > 0 {
-                    if !cell.is_empty()
-                        && ((x > 0 && !inner[y - 1][x - 1].is_empty())
-                            || (x < GAME_BOARD_SIZE - 1 && !inner[y - 1][x + 1].is_empty()))
-                    {
-                        return Err(InvalidInputError {});
-                    }
-                    if !inner[y - 1][x].is_empty() {
-                        continue;
-                    }
-                }
-                if x > 0 && !inner[y][x - 1].is_empty() {
-                    continue;
-                }
-                let vertical_ship_size = inner[y..GAME_BOARD_SIZE]
-                    .iter()
-                    .take_while(|line| line[x].is_ship())
-                    .count();
-                let horizontal_ship_size = inner[y][x..GAME_BOARD_SIZE]
-                    .iter()
-                    .take_while(|cell| cell.is_ship())
-                    .count();
-                let ship_size = if vertical_ship_size == horizontal_ship_size {
-                    match vertical_ship_size {
-                        0 => continue,
-                        1 => 1,
-                        _ => return Err(InvalidInputError {}),
-                    }
-                } else {
-                    if vertical_ship_size == 1 {
-                        horizontal_ship_size
-                    } else if horizontal_ship_size == 1 {
-                        vertical_ship_size
+        // Parse string map into `GameBoardCell`s and validate shape
+        let board = Self {
+            inner: lines
+                .take(10)
+                .flat_map(|line| {
+                    if line.as_ref().len() == usize::from(GAME_BOARD_SIZE) {
+                        line.as_ref().chars().map(GameBoardCell::try_from).collect()
                     } else {
-                        return Err(InvalidInputError {});
+                        arrayvec::ArrayVec::from(
+                            [Err(InvalidInputError {}); GAME_BOARD_SIZE as usize],
+                        )
                     }
-                };
-                if ship_size >= ships_count.len() {
-                    return Err(InvalidInputError {});
-                }
-                ships_count[ship_size] = ships_count[ship_size]
-                    .checked_sub(1)
-                    .ok_or_else(|| InvalidInputError {})?;
-            }
-        }
-        if ships_count.iter().sum::<u8>() > 0 {
+                })
+                .collect::<Result<_, _>>()?,
+            hits_left,
+        };
+
+        if board.inner.len() != usize::from(GAME_BOARD_SIZE * GAME_BOARD_SIZE) {
             return Err(InvalidInputError {});
         }
-        Ok(Self { inner, hits_left })
+
+        // Validate amount of ships and their shape
+        for position in Position::top_left().iter() {
+            if let Some(position_above) = position.get_above() {
+                // Detect ships that are touching by their corners
+                if !board.get(position).is_empty()
+                    && ![position_above.get_left(), position_above.get_right()]
+                        .iter()
+                        .flatten()
+                        .all(|&pos| board.get(pos).is_empty())
+                {
+                    return Err(InvalidInputError {});
+                }
+
+                // If there is a non-empty cell above the current cell, we skip further checking as
+                // we should have already accounted this cell when handling that one.
+                if !board.get(position_above).is_empty() {
+                    continue;
+                }
+            }
+            // If there is a non-empty cell on the left of the current cell, we skip further
+            // checking as we should have already accounted this cell when handling that one.
+            if let Some(false) = position.get_left().map(|pos| board.get(pos).is_empty()) {
+                continue;
+            }
+
+            let vertical_ship_size = position
+                .iter_below()
+                .take_while(|&pos| board.get(pos).is_ship())
+                .count();
+            let horizontal_ship_size = position
+                .iter_right()
+                .take_while(|&pos| board.get(pos).is_ship())
+                .count();
+
+            let ship_size = if vertical_ship_size == horizontal_ship_size {
+                match vertical_ship_size {
+                    0 => continue,
+                    1 => 1,
+                    _ => return Err(InvalidInputError {}),
+                }
+            } else {
+                if vertical_ship_size == 1 {
+                    horizontal_ship_size
+                } else if horizontal_ship_size == 1 {
+                    vertical_ship_size
+                } else {
+                    return Err(InvalidInputError {});
+                }
+            };
+
+            let ship_count = ships_count
+                .get_mut(ship_size)
+                .ok_or_else(|| InvalidInputError {})?;
+            *ship_count = ship_count
+                .checked_sub(1)
+                .ok_or_else(|| InvalidInputError {})?;
+        }
+
+        if ships_count.iter().sum::<u8>() > 0 {
+            Err(InvalidInputError {})
+        } else {
+            Ok(board)
+        }
     }
 
     pub fn shoot(&mut self, position: Position) -> GameBoardShotResult {
-        let cell: &mut GameBoardCell =
-            &mut self.inner[usize::from(position.y.get() - 1)][usize::from(position.x.get() - 1)];
-        if let GameBoardCell::Ship(GameBoardCellState::NonShot) = cell {
-            self.hits_left -= 1;
+        let cell: &mut GameBoardCell = self.get_mut(position);
+        let shot_result = if let GameBoardCell::Ship(GameBoardCellState::NonShot) = cell {
             *cell = GameBoardCell::Ship(GameBoardCellState::Shot);
-            if true {
-                // TODO
-                GameBoardShotResult::Hit
-            } else {
+            if position
+                .iter_left()
+                .skip(1)
+                .map(|pos| self.get(pos))
+                .take_while(|cell| cell.is_ship())
+                .chain(
+                    position
+                        .iter_right()
+                        .skip(1)
+                        .map(|pos| self.get(pos))
+                        .take_while(|cell| cell.is_ship()),
+                )
+                .chain(
+                    position
+                        .iter_above()
+                        .skip(1)
+                        .map(|pos| self.get(pos))
+                        .take_while(|cell| cell.is_ship()),
+                )
+                .chain(
+                    position
+                        .iter_below()
+                        .skip(1)
+                        .map(|pos| self.get(pos))
+                        .take_while(|cell| cell.is_ship()),
+                )
+                .all(|cell| {
+                    if let GameBoardCell::Ship(GameBoardCellState::Shot) = cell {
+                        true
+                    } else {
+                        false
+                    }
+                })
+            {
                 GameBoardShotResult::Sunk
+            } else {
+                GameBoardShotResult::Hit
             }
         } else {
             if let GameBoardCell::Empty(GameBoardCellState::NonShot) = cell {
                 *cell = GameBoardCell::Empty(GameBoardCellState::Shot);
             }
             GameBoardShotResult::Miss
+        };
+        if let GameBoardShotResult::Hit | GameBoardShotResult::Sunk = shot_result {
+            self.hits_left -= 1;
         }
+        shot_result
     }
 
     pub fn hits_left(&self) -> u8 {
@@ -175,7 +203,7 @@ impl std::fmt::Debug for GameBoard {
             "GameBoard ({} hits left):\n{}",
             self.hits_left,
             self.inner
-                .iter()
+                .chunks(usize::from(GAME_BOARD_SIZE))
                 .map(|line| {
                     line.iter()
                         .copied()
@@ -358,23 +386,6 @@ mod tests {
 
     #[test]
     fn test_GameBoard_validation_of_invalid_number_of_ships() {
-        assert!(GameBoard::from_lines(
-            "\
-             ####_###_# \
-             _________# \
-             _________# \
-             __________ \
-             _________# \
-             _________# \
-             __________ \
-             #________# \
-             _________# \
-             #_#_#_##__ \
-             "
-            .split_whitespace()
-        )
-        .is_ok());
-
         assert!(GameBoard::from_lines(
             "\
              ####______ \

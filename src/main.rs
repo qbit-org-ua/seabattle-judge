@@ -8,8 +8,11 @@ use tokio_process::CommandExt;
 
 mod board;
 mod cells;
+mod position;
 
 use board::{GameBoard, GameBoardShotResult};
+
+const GAME_BOARD_SIZE: u8 = 10;
 
 #[derive(Debug, Copy, Clone)]
 pub struct InvalidInputError;
@@ -105,7 +108,7 @@ async fn main(args: Args) -> Result<(), Box<dyn std::error::Error>> {
     'game: loop {
         loop {
             if let Some(Ok(line)) = player1_reader.next().await {
-                let shot_position = line.parse::<board::Position>().unwrap();
+                let shot_position = line.parse::<position::Position>().unwrap();
                 let shot_result = player2_map.shoot(shot_position);
                 player1_writer
                     .send(shot_result.as_str().to_owned())
@@ -125,7 +128,7 @@ async fn main(args: Args) -> Result<(), Box<dyn std::error::Error>> {
 
         loop {
             if let Some(Ok(line)) = player2_reader.next().await {
-                let shot_position = line.parse::<board::Position>().unwrap();
+                let shot_position = line.parse::<position::Position>().unwrap();
                 let shot_result = player1_map.shoot(shot_position);
                 player2_writer
                     .send(shot_result.as_str().to_owned())
