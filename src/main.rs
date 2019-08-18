@@ -103,7 +103,7 @@ async fn main(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         Err(InvalidInputError {})
     }
     .unwrap();
-    println!("PLAYER2 MAP: {:?}", player1_map);
+    println!("PLAYER2 MAP: {:?}", player2_map);
 
     'game: loop {
         loop {
