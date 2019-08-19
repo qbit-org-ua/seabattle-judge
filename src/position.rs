@@ -31,15 +31,15 @@ impl Position {
     }
 
     pub fn get_left(self) -> Option<Self> {
-        self.iter_left().skip(1).next()
+        self.iter_left().nth(1)
     }
 
     pub fn get_right(self) -> Option<Self> {
-        self.iter_right().skip(1).next()
+        self.iter_right().nth(1)
     }
 
     pub fn get_above(self) -> Option<Self> {
-        self.iter_above().skip(1).next()
+        self.iter_above().nth(1)
     }
 
     pub fn iter(self) -> PositionIter {
@@ -62,7 +62,7 @@ impl Position {
 
     pub fn iter_above(mut self) -> impl Iterator<Item = Position> {
         let y = self.y();
-        self.yx = self.yx % GAME_BOARD_SIZE;
+        self.yx = self.x();
         self.iter()
             .step_by(usize::from(GAME_BOARD_SIZE))
             .take(usize::from(y + 1))

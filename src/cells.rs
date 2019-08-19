@@ -21,16 +21,23 @@ pub enum GameBoardCell {
 }
 
 impl GameBoardCell {
-    pub fn is_empty(&self) -> bool {
+    pub fn is_empty(self) -> bool {
         match self {
             Self::Empty(_) => true,
             _ => false,
         }
     }
 
-    pub fn is_ship(&self) -> bool {
+    pub fn is_ship(self) -> bool {
         match self {
             Self::Ship(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_shot(self) -> bool {
+        match self {
+            Self::Ship(GameBoardCellState::Shot) | Self::Empty(GameBoardCellState::Shot) => true,
             _ => false,
         }
     }

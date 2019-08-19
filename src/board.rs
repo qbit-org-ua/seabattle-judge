@@ -112,14 +112,12 @@ impl GameBoard {
                     1 => 1,
                     _ => return Err(InvalidInputError {}),
                 }
+            } else if vertical_ship_size == 1 {
+                horizontal_ship_size
+            } else if horizontal_ship_size == 1 {
+                vertical_ship_size
             } else {
-                if vertical_ship_size == 1 {
-                    horizontal_ship_size
-                } else if horizontal_ship_size == 1 {
-                    vertical_ship_size
-                } else {
-                    return Err(InvalidInputError {});
-                }
+                return Err(InvalidInputError {});
             };
 
             let ship_count = ships_count
@@ -141,39 +139,21 @@ impl GameBoard {
         let cell: &mut GameBoardCell = self.get_mut(position);
         let shot_result = if let GameBoardCell::Ship(GameBoardCellState::NonShot) = cell {
             *cell = GameBoardCell::Ship(GameBoardCellState::Shot);
-            if position
-                .iter_left()
-                .skip(1)
-                .map(|pos| self.get(pos))
-                .take_while(|cell| cell.is_ship())
-                .chain(
-                    position
-                        .iter_right()
-                        .skip(1)
-                        .map(|pos| self.get(pos))
-                        .take_while(|cell| cell.is_ship()),
-                )
-                .chain(
-                    position
-                        .iter_above()
-                        .skip(1)
-                        .map(|pos| self.get(pos))
-                        .take_while(|cell| cell.is_ship()),
-                )
-                .chain(
-                    position
-                        .iter_below()
-                        .skip(1)
-                        .map(|pos| self.get(pos))
-                        .take_while(|cell| cell.is_ship()),
-                )
-                .all(|cell| {
-                    if let GameBoardCell::Ship(GameBoardCellState::Shot) = cell {
-                        true
-                    } else {
-                        false
-                    }
-                })
+
+            fn iter_helper<'a>(
+                board: &'a GameBoard,
+                iter: impl Iterator<Item = Position> + 'a,
+            ) -> impl Iterator<Item = GameBoardCell> + 'a {
+                iter.skip(1)
+                    .map(move |pos| board.get(pos))
+                    .take_while(|cell| cell.is_ship())
+            }
+
+            if iter_helper(self, position.iter_left())
+                .chain(iter_helper(self, position.iter_right()))
+                .chain(iter_helper(self, position.iter_above()))
+                .chain(iter_helper(self, position.iter_below()))
+                .all(|cell| cell.is_shot())
             {
                 GameBoardShotResult::Sunk
             } else {
