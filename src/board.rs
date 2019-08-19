@@ -1,5 +1,9 @@
 use std::convert::TryFrom;
 
+use futures_util::stream::StreamExt as _;
+use tokio::codec::FramedRead;
+use tokio::stream::StreamExt as _;
+
 use crate::cells::{GameBoardCell, GameBoardCellState};
 use crate::position::Position;
 use crate::{InvalidInputError, GAME_BOARD_SIZE};
@@ -37,6 +41,20 @@ impl GameBoard {
 
     pub fn get_mut(&mut self, pos: Position) -> &mut GameBoardCell {
         &mut self.inner[Self::get_index(pos)]
+    }
+
+    pub async fn read<T, D>(reader: &mut FramedRead<T, D>) -> Result<Self, InvalidInputError>
+    where
+        T: tokio::io::AsyncRead + Unpin,
+        D: tokio::codec::Decoder + Unpin,
+        <D as tokio::codec::Decoder>::Item: std::convert::AsRef<str>,
+    {
+        let mut player_map_stream = reader.chunks(10).timeout(std::time::Duration::from_secs(1));
+        if let Some(Ok(lines)) = player_map_stream.next().await {
+            GameBoard::from_lines(lines.into_iter().filter_map(|line| line.ok()))
+        } else {
+            Err(InvalidInputError {})
+        }
     }
 
     pub fn from_lines<Item, I>(lines: I) -> Result<Self, InvalidInputError>

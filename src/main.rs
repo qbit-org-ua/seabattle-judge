@@ -1,4 +1,4 @@
-#![feature(async_await)]
+#![feature(async_await, try_trait)]
 
 mod board;
 mod cells;
@@ -19,52 +19,99 @@ struct Args {
     player2: std::path::PathBuf,
 }
 
+#[derive(Debug, Copy, Clone)]
+enum GameResult {
+    Draw,
+    Player1Win,
+    Player2Win,
+}
+
+impl GameResult {
+    fn from_results<T, E>(
+        player1_result: Result<T, E>,
+        player2_result: Result<T, E>,
+    ) -> Result<Self, (T, T)> {
+        match (player1_result, player2_result) {
+            (Ok(player1_value), Ok(player2_value)) => Err((player1_value, player2_value)),
+            (Err(_), Err(_)) => Ok(Self::Draw),
+            (Ok(_), Err(_)) => Ok(Self::Player1Win),
+            (Err(_), Ok(_)) => Ok(Self::Player2Win),
+        }
+    }
+
+    fn print(self) {
+        match self {
+            Self::Draw => {
+                println!("Draw!");
+            }
+            Self::Player1Win => {
+                println!("Player 1 won the game!");
+            }
+            Self::Player2Win => {
+                println!("Player 2 won the game!");
+            }
+        }
+    }
+}
+
 #[paw::main]
 #[tokio::main]
 async fn main(args: Args) -> Result<(), Box<dyn std::error::Error>> {
-    let mut player1 = Player::init(&args.player1).unwrap();
-    let mut player2 = Player::init(&args.player2).unwrap();
+    let game_result = play(args).await;
+    game_result.print();
+    Ok(())
+}
 
-    let mut player1_map = player1.read_map().await.unwrap();
-    println!("PLAYER1 MAP: {:?}", player1_map);
-    let mut player2_map = player2.read_map().await.unwrap();
-    println!("PLAYER2 MAP: {:?}", player2_map);
+async fn play(args: Args) -> GameResult {
+    let player1 = Player::init(&args.player1).await;
+    let player2 = Player::init(&args.player2).await;
 
-    'game: loop {
+    let (mut player1, mut player2) = match GameResult::from_results(player1, player2) {
+        Ok(game_result) => return game_result,
+        Err((player1, player2)) => (player1, player2),
+    };
+
+    eprintln!("Player 1 map: {:?}", player1.map_mut());
+    eprintln!("Player 2 map: {:?}", player2.map_mut());
+
+    let game_result = start_battle(&mut player1, &mut player2).await;
+
+    eprintln!("Player 1 map: {:?}", player1.map_mut());
+    eprintln!("Player 2 map: {:?}", player2.map_mut());
+
+    game_result
+}
+
+async fn start_battle(player1: &mut Player, player2: &mut Player) -> GameResult {
+    loop {
         loop {
             if let Some(shot_position) = player1.next_shot_position().await {
-                let shot_result = player2_map.shoot(shot_position);
+                let shot_result = player2.map_mut().shoot(shot_position);
                 player1.reply_shot_result(shot_result).await;
                 if let GameBoardShotResult::Miss = shot_result {
                     break;
                 }
-                if player2_map.hits_left() == 0 {
-                    println!("Player 1 won the game!");
-                    break 'game;
+                if player2.map_mut().hits_left() == 0 {
+                    return GameResult::Player1Win;
                 }
             } else {
-                break 'game;
+                return GameResult::Player2Win;
             }
         }
 
         loop {
             if let Some(shot_position) = player2.next_shot_position().await {
-                let shot_result = player1_map.shoot(shot_position);
+                let shot_result = player1.map_mut().shoot(shot_position);
                 player2.reply_shot_result(shot_result).await;
                 if let GameBoardShotResult::Miss = shot_result {
                     break;
                 }
-                if player1_map.hits_left() == 0 {
-                    println!("Player 2 won the game!");
-                    break 'game;
+                if player1.map_mut().hits_left() == 0 {
+                    return GameResult::Player2Win;
                 }
             } else {
-                break 'game;
+                return GameResult::Player1Win;
             }
         }
     }
-    eprintln!("PLAYER1 MAP: {:?}", player1_map);
-    eprintln!("PLAYER2 MAP: {:?}", player2_map);
-
-    Ok(())
 }
