@@ -153,6 +153,19 @@ impl GameBoard {
         }
     }
 
+    pub fn to_string(&self) -> String {
+        self.inner
+            .chunks(usize::from(GAME_BOARD_SIZE))
+            .map(|line| {
+                line.iter()
+                    .copied()
+                    .map(GameBoardCell::into)
+                    .chain("\n".chars())
+                    .collect::<String>()
+            })
+            .collect()
+    }
+
     pub fn shoot(&mut self, position: Position) -> GameBoardShotResult {
         let cell: &mut GameBoardCell = self.get_mut(position);
         let shot_result = if let GameBoardCell::Ship(GameBoardCellState::NonShot) = cell {
@@ -196,21 +209,7 @@ impl GameBoard {
 
 impl std::fmt::Debug for GameBoard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "GameBoard ({} hits left):\n{}",
-            self.hits_left,
-            self.inner
-                .chunks(usize::from(GAME_BOARD_SIZE))
-                .map(|line| {
-                    line.iter()
-                        .copied()
-                        .map(GameBoardCell::into)
-                        .chain("\n".chars())
-                        .collect::<String>()
-                })
-                .collect::<String>()
-        )
+        write!(f, "GameBoard ({} hits left):\n{}", self.hits_left, self.to_string())
     }
 }
 

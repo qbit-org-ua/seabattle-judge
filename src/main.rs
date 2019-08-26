@@ -71,8 +71,8 @@ async fn play(args: Args) -> GameResult {
         Err((player1, player2)) => (player1, player2),
     };
 
-    eprintln!("Player 1 map: {:?}", player1.map_mut());
-    eprintln!("Player 2 map: {:?}", player2.map_mut());
+    println!("{}", player1.map_mut().to_string());
+    println!("{}", player2.map_mut().to_string());
 
     let game_result = start_battle(&mut player1, &mut player2).await;
 
@@ -88,6 +88,7 @@ async fn start_battle(player1: &mut Player, player2: &mut Player) -> GameResult 
             if let Some(shot_position) = player1.next_shot_position().await {
                 let shot_result = player2.map_mut().shoot(shot_position);
                 player1.reply_shot_result(shot_result).await;
+                println!("1 {} {} {}", shot_position.x(), shot_position.y(), shot_result.as_str());
                 if let GameBoardShotResult::Miss = shot_result {
                     break;
                 }
@@ -103,6 +104,7 @@ async fn start_battle(player1: &mut Player, player2: &mut Player) -> GameResult 
             if let Some(shot_position) = player2.next_shot_position().await {
                 let shot_result = player1.map_mut().shoot(shot_position);
                 player2.reply_shot_result(shot_result).await;
+                println!("2 {} {} {}", shot_position.x(), shot_position.y(), shot_result.as_str());
                 if let GameBoardShotResult::Miss = shot_result {
                     break;
                 }
