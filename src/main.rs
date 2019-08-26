@@ -88,7 +88,7 @@ async fn start_battle(player1: &mut Player, player2: &mut Player) -> GameResult 
             if let Some(shot_position) = player1.next_shot_position().await {
                 let shot_result = player2.map_mut().shoot(shot_position);
                 player1.reply_shot_result(shot_result).await;
-                println!("1 {} {} {}", shot_position.x(), shot_position.y(), shot_result.as_str());
+                println!("1 {} {} {}", shot_position.x() + 1, shot_position.y() + 1, shot_result.as_str());
                 if let GameBoardShotResult::Miss = shot_result {
                     break;
                 }
@@ -104,7 +104,7 @@ async fn start_battle(player1: &mut Player, player2: &mut Player) -> GameResult 
             if let Some(shot_position) = player2.next_shot_position().await {
                 let shot_result = player1.map_mut().shoot(shot_position);
                 player2.reply_shot_result(shot_result).await;
-                println!("2 {} {} {}", shot_position.x(), shot_position.y(), shot_result.as_str());
+                println!("2 {} {} {}", shot_position.x() + 1, shot_position.y() + 1, shot_result.as_str());
                 if let GameBoardShotResult::Miss = shot_result {
                     break;
                 }
