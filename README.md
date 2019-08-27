@@ -138,147 +138,137 @@ cargo +nightly-2019-08-15 build --release
 Пример лога:
 
 ```
-_####_###_
+____###___
+_________#
+__#___#__#
+__#_______
+__#______#
+#_#__###__
 __________
-#________#
-#_____#__#
-_________#
-__________
-___#_____#
-_________#
-#_________
-___#___##_
-
-#_____##__
-#________#
-_________#
-_#_#______
-_____#___#
-_________#
-#_####___#
-#_________
-#_______#_
+_#_##_#___
+_#________
 __________
 
-1 0 0 hit
-1 1 0 miss
-2 7 0 hit
-2 6 0 hit
-2 8 0 sunk
-2 9 4 hit
-2 9 5 miss
-1 2 0 miss
-2 9 3 hit
-2 9 2 sunk
-2 4 2 miss
-1 3 0 miss
-2 1 9 miss
-1 4 0 miss
-2 3 3 miss
-1 5 0 miss
-2 0 8 sunk
-2 2 2 miss
-1 6 0 hit
-1 7 0 sunk
-1 8 0 miss
-2 3 1 miss
-1 9 0 miss
-2 2 0 hit
-2 3 0 hit
-2 1 0 hit
-2 0 0 miss
-1 0 1 sunk
-1 1 1 miss
-2 4 0 sunk
-2 7 3 miss
-1 2 1 miss
-2 6 2 miss
-1 3 1 miss
-2 5 3 miss
-1 4 1 miss
-2 6 4 miss
-1 5 1 miss
-2 7 5 miss
-1 6 1 miss
-2 4 4 miss
-1 7 1 miss
-2 5 5 miss
-1 8 1 miss
-2 0 2 hit
-2 1 2 miss
-1 9 1 hit
-1 0 2 miss
-2 0 3 sunk
-2 6 6 miss
-1 1 2 miss
-2 2 4 miss
-1 2 2 miss
-2 3 5 miss
-1 3 2 miss
-2 4 6 miss
-1 4 2 miss
-2 2 6 miss
-1 5 2 miss
+#________#
+___#______
+___#______
+#__#___#__
+#______#__
+#_#______#
+#_#______#
+_____##__#
+__________
+#________#
+
+1 2 9 miss
+2 1 1 miss
+1 9 9 miss
 2 1 5 miss
-1 6 2 miss
-2 0 6 miss
-1 7 2 miss
-2 3 7 miss
-1 8 2 miss
-2 2 8 miss
-1 9 2 sunk
-1 0 3 miss
-2 3 9 sunk
-2 5 7 miss
-1 1 3 sunk
-1 2 3 miss
-2 5 9 miss
-1 3 3 sunk
-1 4 3 miss
-2 6 8 miss
-1 5 3 miss
-2 7 9 hit
-2 8 9 sunk
-2 7 7 miss
-1 6 3 miss
-2 8 6 miss
-1 7 3 miss
-2 9 7 hit
-2 8 7 miss
-1 8 3 miss
-2 9 6 sunk
-2 7 4 miss
-1 9 3 miss
-2 2 3 miss
-1 0 4 miss
-2 3 2 miss
-1 1 4 miss
-2 7 2 miss
-1 2 4 miss
-2 0 5 miss
-1 3 4 miss
-2 6 3 sunk
-2 4 3 miss
-1 4 4 miss
+1 10 1 sunk
+1 8 8 miss
+2 1 9 miss
+1 5 5 miss
+2 2 4 miss
+1 1 10 sunk
+1 3 8 miss
+2 2 8 hit
+2 1 8 miss
+1 6 5 miss
+2 3 8 miss
+1 2 2 miss
 2 2 7 miss
-1 5 4 sunk
-1 6 4 miss
-2 1 6 miss
-1 7 4 miss
-2 2 5 miss
-1 8 4 miss
-2 3 4 miss
-1 9 4 hit
-1 0 5 miss
-2 5 6 miss
-1 1 5 miss
-2 4 7 miss
-1 2 5 miss
-2 6 5 miss
-1 3 5 miss
-2 5 8 miss
+1 1 1 sunk
+1 5 6 miss
+2 2 9 sunk
+2 3 3 hit
+2 2 3 miss
+1 6 6 miss
+2 4 3 miss
+1 7 7 miss
+2 3 2 miss
+1 4 4 hit
+1 3 4 miss
+2 3 7 miss
+1 5 4 miss
+2 4 2 miss
 1 4 5 miss
-2 3 6 sunk
+2 4 6 miss
+1 4 3 hit
+1 4 2 sunk
+1 8 3 miss
+2 4 10 miss
+1 7 4 miss
+2 5 1 hit
+2 4 1 miss
+1 10 10 sunk
+1 4 7 miss
+2 6 1 hit
+2 7 1 sunk
+2 1 7 miss
+1 6 9 miss
+2 1 10 miss
+1 3 6 hit
+1 2 6 miss
+2 2 6 miss
+1 4 6 miss
+2 3 5 hit
+2 2 5 miss
+1 3 7 sunk
+1 6 3 miss
+2 4 5 miss
+1 6 1 miss
+2 3 6 hit
+2 4 4 miss
+1 8 2 miss
+2 4 7 miss
+1 8 10 miss
+2 5 3 miss
+1 7 2 miss
+2 5 6 miss
+1 10 4 miss
+2 5 9 miss
+1 10 6 hit
+1 9 6 miss
+2 6 5 miss
+1 10 7 hit
+1 10 8 sunk
+1 6 10 miss
+2 6 8 miss
+1 7 5 miss
+2 7 4 miss
+1 1 6 hit
+1 2 6 miss
+2 7 7 miss
+1 1 7 hit
+1 1 8 miss
+2 7 10 miss
+1 1 5 hit
+1 1 4 sunk
+1 4 10 miss
+2 8 3 miss
+1 5 7 miss
+2 8 6 hit
+2 7 6 hit
+2 6 6 sunk
+2 8 9 miss
+1 8 7 miss
+2 9 2 miss
+1 3 9 miss
+2 9 5 miss
+1 7 8 hit
+1 6 8 sunk
+1 4 9 miss
+2 9 8 miss
+1 3 10 miss
+2 10 1 miss
+1 8 6 miss
+2 10 4 miss
+1 8 4 hit
+1 7 4 miss
+2 10 7 miss
+1 9 4 miss
+2 10 10 miss
+1 8 5 sunk
 ```
 
 ### Интерфейс для игры человека
